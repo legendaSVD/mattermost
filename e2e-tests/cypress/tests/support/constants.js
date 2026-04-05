@@ -1,0 +1,1 @@
+export const DEFAULT_TEAM = {name: 'ad-1', display_name: 'eligendi', type: 'O'};

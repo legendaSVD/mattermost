@@ -1,0 +1,28 @@
+import {getAsset} from '@/asset';
+import {ChannelsPage, expect, test} from '@mattermost/playwright-lib';
+test('MM-T391 Remove team icon', async ({pw}) => {
+    const {adminUser, adminClient, team} = await pw.initSetup();
+    const {page} = await pw.testBrowser.login(adminUser);
+    const channelsPage = new ChannelsPage(page);
+    await channelsPage.goto(team.name);
+    let teamSettings = await channelsPage.openTeamSettings();
+    const infoSettings = teamSettings.infoSettings;
+    await infoSettings.uploadIcon(getAsset('mattermost-icon_128x128.png'));
+    await teamSettings.save();
+    await teamSettings.verifySavedMessage();
+    const teamWithIcon = await adminClient.getTeam(team.id);
+    expect(teamWithIcon.last_team_icon_update).toBeGreaterThan(0);
+    await teamSettings.close();
+    await expect(teamSettings.container).not.toBeVisible();
+    teamSettings = await channelsPage.openTeamSettings();
+    await expect(infoSettings.teamIconImage).toBeVisible();
+    await expect(infoSettings.teamIconInitial).not.toBeVisible();
+    await infoSettings.removeIcon();
+    const teamAfterRemove = await adminClient.getTeam(team.id);
+    expect(teamAfterRemove.last_team_icon_update || 0).toBe(0);
+    await teamSettings.close();
+    await expect(teamSettings.container).not.toBeVisible();
+    teamSettings = await channelsPage.openTeamSettings();
+    await expect(infoSettings.teamIconInitial).toBeVisible();
+    await expect(infoSettings.teamIconImage).not.toBeVisible();
+});

@@ -1,0 +1,69 @@
+export function changeGuestFeatureSettings(featureFlag = true, emailInvitation = true, whitelistedDomains = '') {
+    cy.apiUpdateConfig({
+        GuestAccountsSettings: {
+            Enable: featureFlag,
+            RestrictCreationToDomains: whitelistedDomains,
+        },
+        ServiceSettings: {
+            EnableEmailInvitations: emailInvitation,
+        },
+    });
+}
+export function invitePeople(typeText: string, resultsCount: number, verifyText: string, channelName = 'Town Square', clickInvite = true) {
+    cy.uiOpenTeamMenu('Invite people');
+    cy.findByTestId('inviteGuestLink').click();
+    cy.get('.users-emails-input__control').should('be.visible').within(() => {
+        cy.get('input').typeWithForce(typeText);
+    });
+    cy.get('.users-emails-input__menu').
+        children().should('have.length', resultsCount).eq(0).should('contain', verifyText).click();
+    cy.get('.channels-input__control').should('be.visible').within(() => {
+        cy.get('input').typeWithForce(channelName);
+    });
+    cy.get('.channels-input__menu').
+        children().should('have.length', 1).
+        eq(0).should('contain', channelName).click();
+    if (clickInvite) {
+        cy.findByTestId('inviteButton').scrollIntoView().click();
+    }
+}
+export function verifyInvitationError(user: string, team: Cypress.Team, errorText: string, verifyGuestBadge = false) {
+    cy.findByTestId('invitationModal').within(() => {
+        cy.get('h1').should('have.text', `Guests invited to ${team.display_name}`);
+        cy.get('div.invitation-modal-confirm--sent').should('not.exist');
+        cy.get('div.invitation-modal-confirm--not-sent').should('be.visible').within(() => {
+            cy.get('h2 > span').should('have.text', 'Invitations Not Sent');
+            cy.get('.people-header').should('have.text', 'People');
+            cy.get('.details-header').should('have.text', 'Details');
+            cy.get('.username-or-icon').should('contain', user);
+            cy.get('.reason').should('have.text', errorText);
+            if (verifyGuestBadge) {
+                cy.get('.username-or-icon .Tag').should('be.visible').and('have.text', 'GUEST');
+            }
+        });
+        cy.findByTestId('confirm-done').should('be.visible').and('not.be.disabled').click();
+    });
+    cy.get('.InvitationModal').should('not.exist');
+}
+export function verifyInvitationSuccess(user: string, team: Cypress.Team, successText: string, verifyGuestBadge = false) {
+    cy.findByTestId('invitationModal').within(() => {
+        cy.get('h1').should('have.text', `Guests invited to ${team.display_name}`);
+        cy.get('div.invitation-modal-confirm--not-sent').should('not.exist');
+        cy.get('div.invitation-modal-confirm--sent').should('be.visible').within(() => {
+            cy.get('h2 > span').should('have.text', 'Successful Invites');
+            cy.get('.people-header').should('have.text', 'People');
+            cy.get('.details-header').should('have.text', 'Details');
+            cy.get('.username-or-icon').should('contain', user);
+            cy.get('.reason').should('have.text', successText);
+            if (verifyGuestBadge) {
+                cy.get('.username-or-icon .Tag').should('be.visible').and('have.text', 'GUEST');
+            }
+        });
+        cy.findByTestId('confirm-done').should('be.visible').and('not.be.disabled').click();
+    });
+    cy.get('.InvitationModal').should('not.exist');
+}
+export function verifyGuest(userStatus = 'Guest') {
+    cy.get('#systemUsersTable-cell-0_usernameColumn').parent().should('have.length', 1);
+    cy.get('#actionMenuButton-systemUsersTable-0').should('be.visible').and('have.text', userStatus);
+}

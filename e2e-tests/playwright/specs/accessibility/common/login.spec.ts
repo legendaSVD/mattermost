@@ -1,0 +1,36 @@
+import {expect, test} from '@mattermost/playwright-lib';
+test('/login accessibility quick check', async ({pw, axe}) => {
+    await pw.hasSeenLandingPage();
+    await pw.loginPage.goto();
+    await pw.loginPage.toBeVisible();
+    const accessibilityScanResults = await axe.builder(pw.loginPage.page).analyze();
+    expect(accessibilityScanResults.violations).toHaveLength(0);
+});
+test('/login accessibility tab support', async ({pw}) => {
+    await pw.hasSeenLandingPage();
+    await pw.loginPage.goto();
+    await pw.loginPage.toBeVisible();
+    expect(await pw.loginPage.loginInput).toBeFocused();
+    await pw.loginPage.loginInput.press('Tab');
+    expect(await pw.loginPage.passwordInput).toBeFocused();
+    await pw.loginPage.passwordInput.press('Tab');
+    expect(await pw.loginPage.passwordToggleButton).toBeFocused();
+    await pw.loginPage.passwordToggleButton.press('Tab');
+    expect(await pw.loginPage.forgotPasswordLink).toBeFocused();
+    await pw.loginPage.forgotPasswordLink.press('Tab');
+    expect(await pw.loginPage.signInButton).toBeFocused();
+    await pw.loginPage.signInButton.press('Tab');
+    expect(await pw.loginPage.footer.aboutLink).toBeFocused();
+    await pw.loginPage.footer.aboutLink.press('Tab');
+    expect(await pw.loginPage.footer.privacyPolicyLink).toBeFocused();
+    await pw.loginPage.footer.privacyPolicyLink.press('Tab');
+    expect(await pw.loginPage.footer.termsLink).toBeFocused();
+    await pw.loginPage.footer.termsLink.press('Tab');
+    expect(await pw.loginPage.footer.helpLink).toBeFocused();
+    await pw.loginPage.loginInput.focus();
+    expect(await pw.loginPage.loginInput).toBeFocused();
+    await pw.loginPage.loginInput.press('Shift+Tab');
+    expect(await pw.loginPage.createAccountLink).toBeFocused();
+    await pw.loginPage.createAccountLink.press('Shift+Tab');
+    expect(await pw.loginPage.header.logo).toBeFocused();
+});

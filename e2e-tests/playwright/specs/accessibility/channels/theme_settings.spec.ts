@@ -1,0 +1,65 @@
+import {expect, test} from '@mattermost/playwright-lib';
+test('Theme settings should be keyboard accessible', async ({axe, pw}) => {
+    const {user} = await pw.initSetup();
+    const {page, channelsPage} = await pw.testBrowser.login(user);
+    const ab = axe.builder(page).disableRules([
+        'color-contrast',
+        'aria-required-children',
+        'aria-required-parent',
+    ]);
+    await channelsPage.goto();
+    await channelsPage.toBeVisible();
+    const settingsModal = await channelsPage.globalHeader.openSettings();
+    let accessibilityScanResults = await ab.analyze();
+    expect(accessibilityScanResults.violations).toHaveLength(0);
+    await settingsModal.container.focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('ArrowDown');
+    const {displaySettings} = settingsModal;
+    await displaySettings.toBeVisible();
+    accessibilityScanResults = await ab.analyze();
+    expect(accessibilityScanResults.violations).toHaveLength(0);
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Space');
+    await displaySettings.verifySectionIsExpanded('theme');
+    await expect(page.getByLabel('Premade Themes')).toBeFocused();
+    accessibilityScanResults = await ab.analyze();
+    expect(accessibilityScanResults.violations).toHaveLength(0);
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Denim'})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Sapphire'})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Quartz'})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Indigo'})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Onyx'})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', {name: 'See other themes'})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Save'})).toBeFocused();
+    await page.getByLabel('Premade Themes').focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByLabel('Custom Theme')).toBeFocused();
+    await page.keyboard.press('Tab');
+    const sidebarStyles = page.getByRole('button', {name: 'Sidebar Styles'});
+    await expect(sidebarStyles).toBeFocused();
+    await expect(sidebarStyles).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', {name: 'Center Channel Styles'})).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(sidebarStyles).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(sidebarStyles).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByLabel('Sidebar Styles')).toHaveCSS('overflow-y', 'visible');
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Sidebar BG', {exact: true})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Sidebar Text', {exact: true})).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Sidebar Header BG')).toBeFocused();
+    accessibilityScanResults = await ab.analyze();
+    expect(accessibilityScanResults.violations).toHaveLength(0);
+});

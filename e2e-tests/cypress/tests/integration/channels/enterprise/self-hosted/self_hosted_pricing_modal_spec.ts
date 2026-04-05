@@ -1,0 +1,121 @@
+describe('Self hosted Pricing modal', () => {
+    let urlL: string | undefined;
+    let createdUser: Cypress.UserProfile | undefined;
+    before(() => {
+        cy.apiInitSetup().then(({user, offTopicUrl: url}) => {
+            urlL = url;
+            createdUser = user;
+            cy.apiAdminLogin();
+            cy.apiDeleteLicense();
+            cy.visit(url);
+        });
+    });
+    it('should show Upgrade button in global header for admin users on starter plan', () => {
+        cy.get('#UpgradeButton').should('exist').contains('View plans');
+        cy.get('#UpgradeButton').trigger('mouseover').then(() => {
+            cy.get('#upgrade_button_tooltip').should('be.visible').contains('Only visible to system admins');
+        });
+    });
+    it('should not show Upgrade button in global header for non admin users', () => {
+        cy.apiLogout();
+        cy.apiLogin(createdUser);
+        cy.visit(urlL);
+        cy.get('#UpgradeButton').should('not.exist');
+    });
+    it('should not show Upgrade button for admin users on non trial licensed server', () => {
+        withTrialBefore('false');
+        withTrialLicense('false');
+        cy.apiLogout();
+        cy.apiAdminLogin();
+        cy.visit('admin_console/about/license');
+        cy.get('div.Badge').should('not.exist');
+        cy.findByTitle('Back Icon').should('be.visible').click();
+        cy.get('#UpgradeButton').should('not.exist');
+    });
+    it('Upgrade button should open pricing modal admin users when no trial has ever been added on free plan', () => {
+        withTrialBefore('false');
+        cy.apiLogout();
+        cy.apiAdminLogin();
+        cy.visit(urlL);
+        cy.get('#UpgradeButton').should('exist').click();
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#free').should('be.visible');
+        cy.get('#free_action').should('be.disabled').contains('Downgrade');
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#professional').should('be.visible');
+        cy.get('#professional_action').should('not.be.disabled').contains('Upgrade');
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#enterprise').should('be.visible');
+        cy.get('#start_trial_btn').should('not.be.disabled').contains('Start trial');
+    });
+    it('Upgrade button should open pricing modal admin users when the server has requested a trial before on free plan', () => {
+        withTrialBefore('true');
+        cy.apiLogout();
+        cy.apiAdminLogin();
+        cy.visit(urlL);
+        cy.get('#UpgradeButton').should('exist').click();
+        cy.get('.alert-option').should('be.visible');
+        cy.get('span').contains('Looking for a cloud option?');
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#free').should('be.visible');
+        cy.get('#free_action').should('be.disabled').contains('Downgrade');
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#professional').should('be.visible');
+        cy.get('#professional_action').should('not.be.disabled').contains('Upgrade');
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#enterprise').should('be.visible');
+        cy.get('#enterprise_action').should('not.be.disabled').contains('Contact Sales');
+    });
+    it('Upgrade button should open pricing modal admin users when the server is on a trial', () => {
+        withTrialBefore('false');
+        withTrialLicense('true');
+        cy.apiLogout();
+        cy.apiAdminLogin();
+        cy.visit('admin_console/about/license');
+        cy.get('div.Badge').should('exist').should('contain', 'Trial');
+        cy.findByTitle('Back Icon').should('be.visible').click();
+        cy.visit(urlL);
+        cy.get('#UpgradeButton').should('exist').click();
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#free').should('be.visible');
+        cy.get('#free_action').should('be.disabled').contains('Downgrade');
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#professional').should('be.visible');
+        cy.get('#professional_action').should('not.be.disabled').contains('Upgrade');
+        cy.get('#pricingModal').should('be.visible');
+        cy.get('#enterprise').should('be.visible');
+        cy.get('#start_trial_btn').should('not.be.disabled');
+    });
+    it('Upgrade button should open air gapped modal when hosted signup is not available', () => {
+        cy.apiAdminLogin();
+        cy.intercept('GET', '**/api/v4/hosted_customer/signup_available', {
+            statusCode: 501,
+            body: {
+                message: 'An unknown error occurred. Please try again or contact support.',
+            },
+        }).as('airGappedCheck');
+        cy.get('#UpgradeButton').should('exist').click();
+        cy.wait('@airGappedCheck');
+        cy.get('#professional_action').should('exist').click();
+        cy.get('.air-gapped-purchase-modal').should('exist');
+        cy.findByText('https://mattermost.com/pl/pricing/#self-hosted').last().should('exist');
+    });
+    function withTrialBefore(trialed: string) {
+        cy.intercept('GET', '**/api/v4/trial-license/prev', {
+            statusCode: 200,
+            body: {
+                IsLicensed: trialed,
+                IsTrial: trialed,
+            },
+        });
+    }
+    function withTrialLicense(trial: string) {
+        cy.intercept('GET', '**/api/v4/license/client?format=old', {
+            statusCode: 200,
+            body: {
+                IsLicensed: 'true',
+                IsTrial: trial,
+            },
+        });
+    }
+});

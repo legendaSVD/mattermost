@@ -1,0 +1,26 @@
+import {expect, test} from '@mattermost/playwright-lib';
+test('MM-T2268 Edit Message with Attachment', async ({pw}) => {
+    const {user} = await pw.initSetup();
+    const {channelsPage, page} = await pw.testBrowser.login(user);
+    await channelsPage.goto();
+    await channelsPage.toBeVisible();
+    await channelsPage.postMessage('Test', ['mattermost.png']);
+    const post = await channelsPage.getLastPost();
+    await post.toBeVisible();
+    await post.toContainText('Test');
+    const attachment = post.container.getByLabel(/file thumbnail/i);
+    await expect(attachment).toBeVisible();
+    const postId = await post.getId();
+    await expect(channelsPage.centerView.editedPostIcon(postId)).not.toBeVisible();
+    await channelsPage.centerView.postCreate.input.focus();
+    await page.keyboard.press('ArrowUp');
+    await channelsPage.centerView.postEdit.toBeVisible();
+    await channelsPage.centerView.postEdit.input.fill('Test with some edit');
+    await channelsPage.centerView.postEdit.sendMessage();
+    const updatedPost = await channelsPage.getLastPost();
+    await updatedPost.toBeVisible();
+    await updatedPost.toContainText('Test with some edit');
+    const updatedAttachment = updatedPost.container.getByLabel(/file thumbnail/i);
+    await expect(updatedAttachment).toBeVisible();
+    await expect(channelsPage.centerView.editedPostIcon(postId)).toBeVisible();
+});

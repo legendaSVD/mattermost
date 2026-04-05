@@ -1,0 +1,45 @@
+import * as TIMEOUTS from '../../../fixtures/timeouts';
+describe('Emoji sorting', () => {
+    before(() => {
+        cy.apiInitSetup({loginAfter: true}).then(({offTopicUrl}) => {
+            cy.visit(offTopicUrl);
+        });
+    });
+    it('MM-T157 Filtered emojis are sorted by recency, then begins with, then contains (alphabetically within each)', () => {
+        cy.postMessage(':dog:');
+        cy.postMessage(':cat:');
+        cy.uiOpenEmojiPicker();
+        cy.findAllByTestId('emojiItem').
+            each(($btn) => {
+                if ($btn.attr('aria-label') === 'cat emoji') {
+                    cy.wrap($btn).should('exist');
+                }
+            });
+        const emojiList = [];
+        cy.postMessage(':guardsman:');
+        cy.postMessage(':white_small_square:');
+        cy.uiOpenEmojiPicker();
+        cy.findByPlaceholderText('Search emojis').should('be.visible').type('sma', {delay: TIMEOUTS.HALF_SEC});
+        cy.findAllByTestId('emojiItem').children('img').each(($el) => {
+            const emojiName = $el.get(0);
+            emojiList.push(emojiName.dataset.testid);
+        }).then(() => {
+            expect(emojiList).to.deep.equal([
+                'guardsman',
+                'white_small_square',
+                'small_airplane',
+                'small_blue_diamond',
+                'small_orange_diamond',
+                'small_red_triangle',
+                'small_red_triangle_down',
+                'arrow_down_small',
+                'arrow_up_small',
+                'black_medium_small_square',
+                'black_small_square',
+                'mostly_sunny,sun_small_cloud,sun_behind_small_cloud',
+                'white_medium_small_square',
+                'zany_face,grinning_face_with_one_large_and_one_small_eye',
+            ]);
+        });
+    });
+});
