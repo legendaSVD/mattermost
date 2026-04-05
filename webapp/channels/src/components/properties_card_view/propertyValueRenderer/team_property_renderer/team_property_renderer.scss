@@ -1,0 +1,12 @@
+.TeamPropertyRenderer {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    .TeamIcon {
+        width: 20px;
+        height: 20px;
+        background: var(--center-channel-color-08);
+        font-size: 12px;
+    }
+}

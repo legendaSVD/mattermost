@@ -1,0 +1,1 @@
+ALTER TABLE oauthapps ADD COLUMN IF NOT EXISTS isdynamicallyregistered BOOLEAN DEFAULT FALSE;

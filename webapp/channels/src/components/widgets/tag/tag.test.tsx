@@ -1,0 +1,87 @@
+import React from 'react';
+import {render, screen, userEvent} from 'tests/react_testing_utils';
+import Tag from './tag';
+describe('components/widgets/tag/Tag', () => {
+    test('should render tag with text and default classes', () => {
+        render(
+            <Tag
+                className={'test'}
+                text={'Test text'}
+            />,
+        );
+        const tagText = screen.getByText('Test text');
+        const tag = tagText.parentElement;
+        expect(tag).toBeInTheDocument();
+        expect(tag).toHaveClass('Tag', 'Tag--xs', 'test');
+    });
+    test('should render tag with icon', () => {
+        const {container} = render(
+            <Tag
+                className={'test'}
+                text={'Test text'}
+                icon={'alert-circle-outline'}
+            />,
+        );
+        const tagText = screen.getByText('Test text');
+        const tag = tagText.parentElement;
+        expect(tag).toBeInTheDocument();
+        expect(tag).toHaveClass('Tag', 'Tag--xs', 'test');
+        const icon = container.querySelector('svg');
+        expect(icon).toBeInTheDocument();
+    });
+    test('should render tag with uppercase styling', () => {
+        render(
+            <Tag
+                className={'test'}
+                text={'Test text'}
+                uppercase={true}
+            />,
+        );
+        const tagText = screen.getByText('Test text');
+        const tag = tagText.parentElement;
+        expect(tag).toBeInTheDocument();
+        expect(tag).toHaveClass('Tag', 'Tag--xs', 'test');
+        expect(tag).toHaveStyle({textTransform: 'uppercase'});
+    });
+    test('should render tag with size "sm"', () => {
+        render(
+            <Tag
+                className={'test'}
+                text={'Test text'}
+                size={'sm'}
+            />,
+        );
+        const tagText = screen.getByText('Test text');
+        const tag = tagText.parentElement;
+        expect(tag).toBeInTheDocument();
+        expect(tag).toHaveClass('Tag', 'Tag--sm', 'test');
+    });
+    test('should render tag with "success" variant', () => {
+        render(
+            <Tag
+                className={'test'}
+                text={'Test text'}
+                variant={'success'}
+            />,
+        );
+        const tagText = screen.getByText('Test text');
+        const tag = tagText.parentElement;
+        expect(tag).toBeInTheDocument();
+        expect(tag).toHaveClass('Tag', 'Tag--success', 'Tag--xs', 'test');
+    });
+    test('should render as button and handle click when onClick provided', async () => {
+        const click = jest.fn();
+        render(
+            <Tag
+                className={'test'}
+                text={'Test text'}
+                onClick={click}
+            />,
+        );
+        const tag = screen.getByRole('button', {name: 'Test text'});
+        expect(tag).toBeInTheDocument();
+        expect(tag).toHaveClass('Tag', 'Tag--xs', 'test');
+        await userEvent.click(tag);
+        expect(click).toHaveBeenCalledTimes(1);
+    });
+});

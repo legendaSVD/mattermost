@@ -1,0 +1,11 @@
+.edit-category__helpText {
+    color: rgba(var(--center-channel-color-rgb), 0.75);
+    font-size: 12px;
+    line-height: 40px;
+}
+.GenericModal__button.delete {
+    background: var(--dnd-indicator) !important;
+}
+.delete-category__helpText {
+    color: var(--center-channel-color);
+}

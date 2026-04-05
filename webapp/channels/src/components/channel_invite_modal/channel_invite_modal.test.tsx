@@ -1,0 +1,676 @@
+import React from 'react';
+import {GenericModal} from '@mattermost/components';
+import type {Channel} from '@mattermost/types/channels';
+import type {TeamMembership} from '@mattermost/types/teams';
+import type {UserProfile} from '@mattermost/types/users';
+import type {RelationOneToOne} from '@mattermost/types/utilities';
+import {General} from 'mattermost-redux/constants';
+import ChannelInviteModal from 'components/channel_invite_modal/channel_invite_modal';
+import type {Value} from 'components/multiselect/multiselect';
+import {shallowWithIntl} from 'tests/helpers/intl-test-helper';
+import {act, renderWithContext, screen, userEvent, waitFor} from 'tests/react_testing_utils';
+type UserProfileValue = Value & UserProfile;
+jest.mock('components/common/hooks/useAccessControlAttributes', () => {
+    const EntityType = {
+        Channel: 'channel',
+    };
+    const mockHook = jest.fn(() => ({
+        structuredAttributes: [
+            {
+                name: 'attribute1',
+                values: ['tag1', 'tag2'],
+            },
+        ],
+        loading: false,
+        error: null,
+        fetchAttributes: jest.fn(),
+    }));
+    return {
+        __esModule: true,
+        default: mockHook,
+        EntityType,
+    };
+});
+jest.mock('utils/utils', () => {
+    const original = jest.requireActual('utils/utils');
+    return {
+        ...original,
+        sortUsersAndGroups: jest.fn(),
+    };
+});
+jest.mock('mattermost-redux/client', () => ({
+    Client4: {
+        getProfilesNotInChannel: jest.fn(),
+        getProfilePictureUrl: jest.fn(() => 'mock-url'),
+        getUsersRoute: jest.fn(() => '/api/v4/users'),
+        getTeamsRoute: jest.fn(() => '/api/v4/teams'),
+        getChannelsRoute: jest.fn(() => '/api/v4/channels'),
+        getUrl: jest.fn(() => 'http://localhost:8065'),
+        getBaseRoute: jest.fn(() => '/api/v4'),
+    },
+}));
+describe('components/channel_invite_modal', () => {
+    const users = [{
+        id: 'user-1',
+        label: 'user-1',
+        value: 'user-1',
+        username: 'user-1',
+        delete_at: 0,
+    } as UserProfileValue, {
+        id: 'user-2',
+        label: 'user-2',
+        value: 'user-2',
+        username: 'user-2',
+        delete_at: 0,
+    } as UserProfileValue];
+    const userStatuses = {
+        'user-1': 'online',
+        'user-2': 'offline',
+    } as RelationOneToOne<UserProfile, string>;
+    const channel = {
+        create_at: 1508265709607,
+        creator_id: 'zaktnt8bpbgu8mb6ez9k64r7sa',
+        delete_at: 0,
+        display_name: 'testing',
+        header: 'test',
+        id: 'owsyt8n43jfxjpzh9np93mx1wa',
+        last_post_at: 1508265709635,
+        name: 'testing',
+        purpose: 'test',
+        team_id: 'eatxocwc3bg9ffo9xyybnj4omr',
+        type: 'O',
+        update_at: 1508265709607,
+    } as Channel;
+    const baseProps = {
+        channel,
+        profilesNotInCurrentChannel: [],
+        profilesInCurrentChannel: [],
+        profilesNotInCurrentTeam: [],
+        profilesFromRecentDMs: [],
+        membersInTeam: {},
+        groups: [],
+        userStatuses: {},
+        teammateNameDisplaySetting: General.TEAMMATE_NAME_DISPLAY.SHOW_USERNAME,
+        isGroupsEnabled: true,
+        actions: {
+            addUsersToChannel: jest.fn().mockImplementation(() => {
+                const error = {
+                    message: 'Failed',
+                };
+                return Promise.resolve({error});
+            }),
+            getProfilesNotInChannel: jest.fn().mockImplementation(() => Promise.resolve()),
+            getProfilesInChannel: jest.fn().mockImplementation(() => Promise.resolve()),
+            searchAssociatedGroupsForReference: jest.fn().mockImplementation(() => Promise.resolve()),
+            getTeamStats: jest.fn(),
+            getUserStatuses: jest.fn().mockImplementation(() => Promise.resolve()),
+            loadStatusesForProfilesList: jest.fn(),
+            searchProfiles: jest.fn(),
+            closeModal: jest.fn(),
+            getTeamMembersByIds: jest.fn(),
+        },
+        onExited: jest.fn(),
+    };
+    beforeAll(() => {
+        window.requestAnimationFrame = (_cb: FrameRequestCallback): number => {
+            return 0;
+        };
+    });
+    beforeEach(() => {
+        const {Client4} = require('mattermost-redux/client');
+        Client4.getProfilesNotInChannel.mockClear();
+        Client4.getProfilePictureUrl.mockClear();
+        Client4.getUsersRoute.mockClear();
+        Client4.getTeamsRoute.mockClear();
+        Client4.getChannelsRoute.mockClear();
+        Client4.getUrl.mockClear();
+        Client4.getBaseRoute.mockClear();
+        Client4.getProfilesNotInChannel.mockResolvedValue([]);
+        Client4.getProfilePictureUrl.mockReturnValue('mock-url');
+        Client4.getUsersRoute.mockReturnValue('/api/v4/users');
+        Client4.getTeamsRoute.mockReturnValue('/api/v4/teams');
+        Client4.getChannelsRoute.mockReturnValue('/api/v4/channels');
+        Client4.getUrl.mockReturnValue('http://localhost:8065');
+        Client4.getBaseRoute.mockReturnValue('/api/v4');
+    });
+    test('should match snapshot for channel_invite_modal with profiles', () => {
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal
+                {...baseProps}
+                profilesNotInCurrentChannel={users}
+                profilesInCurrentChannel={[]}
+                profilesNotInCurrentTeam={[]}
+                profilesFromRecentDMs={[]}
+            />,
+        );
+        expect(wrapper).toMatchSnapshot();
+    });
+    test('should match snapshot for channel_invite_modal with profiles from DMs', () => {
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal
+                {...baseProps}
+                profilesNotInCurrentChannel={[]}
+                profilesInCurrentChannel={[]}
+                profilesNotInCurrentTeam={[]}
+                profilesFromRecentDMs={users}
+            />,
+        );
+        expect(wrapper).toMatchSnapshot();
+    });
+    test('should match snapshot with exclude and include users', () => {
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal
+                {...baseProps}
+                profilesNotInCurrentChannel={users}
+                profilesInCurrentChannel={[]}
+                profilesNotInCurrentTeam={[]}
+                profilesFromRecentDMs={[]}
+                includeUsers={
+                    {
+                        'user-3': {
+                            id: 'user-3',
+                            label: 'user-3',
+                            value: 'user-3',
+                            delete_at: 0,
+                        } as UserProfileValue,
+                    }
+                }
+                excludeUsers={
+                    {
+                        'user-1': {
+                            id: 'user-1',
+                            label: 'user-1',
+                            value: 'user-1',
+                            delete_at: 0,
+                        } as UserProfileValue,
+                    }
+                }
+            />,
+        );
+        expect(wrapper).toMatchSnapshot();
+    });
+    test('should match snapshot for channel_invite_modal with userStatuses', () => {
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal
+                {...baseProps}
+                profilesNotInCurrentChannel={users}
+                profilesInCurrentChannel={[]}
+                userStatuses={userStatuses}
+                profilesFromRecentDMs={[]}
+            />,
+        );
+        expect(wrapper).toMatchSnapshot();
+    });
+    test('should hide modal when onHide is called', () => {
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...baseProps}/>,
+        );
+        const modal = wrapper.find(GenericModal);
+        const onHide = modal.props().onHide;
+        if (onHide) {
+            onHide();
+        }
+        wrapper.update();
+        expect(wrapper.find(GenericModal).props().show).toEqual(false);
+    });
+    test('should have called props.onExited when GenericModal.onExited is called', () => {
+        const props = {...baseProps};
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        const modal = wrapper.find(GenericModal);
+        const onExited = modal.props().onExited;
+        if (onExited) {
+            onExited();
+        }
+        expect(props.onExited).toHaveBeenCalledTimes(1);
+    });
+    test('should fail to add users on handleSubmit', async () => {
+        const addUsersToChannelMock = jest.fn().mockImplementation(() => {
+            return Promise.resolve({error: {message: 'Failed'}});
+        });
+        const props = {
+            ...baseProps,
+            actions: {
+                ...baseProps.actions,
+                addUsersToChannel: addUsersToChannelMock,
+            },
+            profilesNotInCurrentChannel: [users[0]],
+            includeUsers: {'user-1': users[0]},
+            membersInTeam: {'user-1': {user_id: 'user-1', team_id: channel.team_id, roles: '', delete_at: 0, scheme_admin: false, scheme_guest: false, scheme_user: true, mention_count: 0, mention_count_root: 0, msg_count: 0, msg_count_root: 0} as TeamMembership},
+        };
+        const {getByText} = renderWithContext(
+            <ChannelInviteModal
+                {...props}
+            />,
+        );
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'user-1');
+        const option = await screen.findByText('user-1', {selector: '.more-modal__name > span'});
+        await userEvent.click(option);
+        expect(screen.getByText('user-1')).toBeInTheDocument();
+        const saveButton = getByText('Add');
+        await userEvent.click(saveButton);
+        await waitFor(() => {
+            expect(addUsersToChannelMock).toHaveBeenCalled();
+        });
+    });
+    test('should add users on handleSubmit', async () => {
+        const addUsersToChannelMock = jest.fn().mockImplementation(() => {
+            return Promise.resolve({data: true});
+        });
+        const props = {
+            ...baseProps,
+            actions: {
+                ...baseProps.actions,
+                addUsersToChannel: addUsersToChannelMock,
+            },
+            profilesNotInCurrentChannel: [users[0]],
+            includeUsers: {'user-1': users[0]},
+            membersInTeam: {'user-1': {user_id: 'user-1', team_id: channel.team_id, roles: '', delete_at: 0, scheme_admin: false, scheme_guest: false, scheme_user: true, mention_count: 0, mention_count_root: 0, msg_count: 0, msg_count_root: 0} as TeamMembership},
+        };
+        const {getByText} = renderWithContext(
+            <ChannelInviteModal
+                {...props}
+            />,
+        );
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'user-1');
+        const option = await screen.findByText('user-1', {selector: '.more-modal__name > span'});
+        await userEvent.click(option);
+        expect(screen.getByText('user-1')).toBeInTheDocument();
+        const saveButton = getByText('Add');
+        await userEvent.click(saveButton);
+        await waitFor(() => {
+            expect(addUsersToChannelMock).toHaveBeenCalled();
+        });
+    });
+    test('should call onAddCallback on handleSubmit with skipCommit', async () => {
+        const onAddCallback = jest.fn();
+        const props = {
+            ...baseProps,
+            skipCommit: true,
+            onAddCallback,
+            profilesNotInCurrentChannel: [users[0]],
+            includeUsers: {'user-1': users[0]},
+            membersInTeam: {'user-1': {user_id: 'user-1', team_id: channel.team_id, roles: '', delete_at: 0, scheme_admin: false, scheme_guest: false, scheme_user: true, mention_count: 0, mention_count_root: 0, msg_count: 0, msg_count_root: 0} as TeamMembership},
+        };
+        const {getByText} = renderWithContext(
+            <ChannelInviteModal
+                {...props}
+            />,
+        );
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'user-1');
+        const option = await screen.findByText('user-1', {selector: '.more-modal__name > span'});
+        await userEvent.click(option);
+        expect(screen.getByText('user-1')).toBeInTheDocument();
+        const saveButton = getByText('Add');
+        await userEvent.click(saveButton);
+        expect(onAddCallback).toHaveBeenCalled();
+        expect(props.actions.addUsersToChannel).not.toHaveBeenCalled();
+    });
+    test('should trim the search term', async () => {
+        const searchProfilesMock = jest.fn().mockImplementation(() => {
+            return Promise.resolve({});
+        });
+        const props = {
+            ...baseProps,
+            actions: {
+                ...baseProps.actions,
+                searchProfiles: searchProfilesMock,
+            },
+        };
+        renderWithContext(
+            <ChannelInviteModal
+                {...props}
+            />,
+        );
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.clear(input);
+        await userEvent.type(input, ' something ');
+        await waitFor(() => {
+            expect(searchProfilesMock).toHaveBeenCalledWith(
+                expect.stringContaining('something'),
+                expect.any(Object),
+            );
+        });
+    });
+    test('should send the invite as guest param through the link', () => {
+        const props = {
+            ...baseProps,
+            canInviteGuests: true,
+            emailInvitationsEnabled: true,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        const invitationLink = wrapper.find('InviteModalLink');
+        expect(invitationLink).toHaveLength(1);
+        expect(invitationLink.prop('inviteAsGuest')).toBeTruthy();
+    });
+    test('should hide the invite as guest param when can not invite guests', () => {
+        const props = {
+            ...baseProps,
+            canInviteGuests: false,
+            emailInvitationsEnabled: false,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        const invitationLink = wrapper.find('InviteModalLink');
+        expect(invitationLink).toHaveLength(0);
+    });
+    test('should show AlertBanner when policy_enforced is true', () => {
+        const channelWithPolicy = {
+            ...channel,
+            policy_enforced: true,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        expect(wrapper.find('AlertBanner').exists()).toBe(true);
+    });
+    test('should show attribute tags in AlertBanner', () => {
+        const channelWithPolicy = {
+            ...channel,
+            policy_enforced: true,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        expect(wrapper.find('AlertBanner').exists()).toBe(true);
+        expect(wrapper.find('TagGroup').exists()).toBe(true);
+        const tagGroup = wrapper.find('TagGroup');
+        const alertTags = tagGroup.find('AlertTag');
+        expect(alertTags).toHaveLength(2);
+        expect(alertTags.at(0).prop('text')).toBe('tag1');
+        expect(alertTags.at(1).prop('text')).toBe('tag2');
+    });
+    test('should not show AlertBanner when policy_enforced is false', () => {
+        const channelWithoutPolicy = {
+            ...channel,
+            policy_enforced: false,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithoutPolicy,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        expect(wrapper.find('AlertBanner').exists()).toBe(false);
+    });
+    test('should show loading state for access attributes', () => {
+        const useAccessControlAttributesModule = require('components/common/hooks/useAccessControlAttributes');
+        const useAccessControlAttributesMock = useAccessControlAttributesModule.default;
+        useAccessControlAttributesMock.mockReturnValueOnce({
+            structuredAttributes: [],
+            loading: true,
+            error: null,
+            fetchAttributes: jest.fn(),
+        });
+        const channelWithPolicy = {
+            ...channel,
+            policy_enforced: true,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        expect(wrapper.find('AlertBanner').exists()).toBe(true);
+        expect(wrapper.find('AlertTag').exists()).toBe(false);
+    });
+    test('should handle error state for access attributes', () => {
+        const useAccessControlAttributesModule = require('components/common/hooks/useAccessControlAttributes');
+        const useAccessControlAttributesMock = useAccessControlAttributesModule.default;
+        useAccessControlAttributesMock.mockReturnValueOnce({
+            structuredAttributes: [],
+            loading: false,
+            error: 'Failed to load attributes',
+            fetchAttributes: jest.fn(),
+        });
+        const channelWithPolicy = {
+            ...channel,
+            policy_enforced: true,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        expect(wrapper.find('AlertBanner').exists()).toBe(true);
+        expect(wrapper.find('AlertTag').exists()).toBe(false);
+    });
+    const getUserSpan = (user: string) =>
+        screen.getByText((text, element) =>
+            element?.tagName === 'SPAN' && text.trim() === user,
+        ) as HTMLElement;
+    test('should not include DM users when ABAC is enabled', async () => {
+        const {Client4} = require('mattermost-redux/client');
+        Client4.getProfilesNotInChannel.mockResolvedValue([users[0]]);
+        const channelWithPolicy = {...channel, policy_enforced: true};
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+            profilesNotInCurrentChannel: [users[0]],
+            profilesFromRecentDMs: [users[1]],
+        };
+        await act(async () => {
+            renderWithContext(<ChannelInviteModal {...props}/>);
+        });
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'user');
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        expect(getUserSpan('user-1')).toBeInTheDocument();
+        expect(screen.queryByText('user-2')).toBeNull();
+    });
+    test('should include DM users when ABAC is disabled', async () => {
+        const channelWithoutPolicy = {...channel, policy_enforced: false};
+        const props = {
+            ...baseProps,
+            channel: channelWithoutPolicy,
+            profilesNotInCurrentChannel: [users[0]],
+            profilesFromRecentDMs: [users[1]],
+        };
+        await act(async () => {
+            renderWithContext(<ChannelInviteModal {...props}/>);
+        });
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'user');
+        expect(getUserSpan('user-1')).toBeInTheDocument();
+        expect(getUserSpan('user-2')).toBeInTheDocument();
+    });
+    test('should not reload data when search term is empty and ABAC is disabled', async () => {
+        const getProfilesNotInChannelMock = jest.fn().mockImplementation(() => Promise.resolve());
+        const channelWithoutPolicy = {
+            ...channel,
+            policy_enforced: false,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithoutPolicy,
+            actions: {
+                ...baseProps.actions,
+                getProfilesNotInChannel: getProfilesNotInChannelMock,
+            },
+        };
+        await act(async () => {
+            renderWithContext(
+                <ChannelInviteModal {...props}/>,
+            );
+        });
+        getProfilesNotInChannelMock.mockClear();
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'a');
+        await userEvent.clear(input);
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+        });
+        expect(getProfilesNotInChannelMock).not.toHaveBeenCalled();
+    });
+    test('should hide the invite as guest link when channel has policy_enforced', () => {
+        const channelWithPolicy = {
+            ...channel,
+            policy_enforced: true,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+            canInviteGuests: true,
+            emailInvitationsEnabled: true,
+        };
+        const wrapper = shallowWithIntl(
+            <ChannelInviteModal {...props}/>,
+        );
+        const invitationLinks = wrapper.find('InviteModalLink');
+        const guestInviteLinks = invitationLinks.findWhere(
+            (node) => node.prop('inviteAsGuest') === true,
+        );
+        expect(guestInviteLinks).toHaveLength(0);
+    });
+    test('should NOT filter out groups when  NOT ABAC is enforced', async () => {
+        const mockGroups = [
+            {
+                id: 'group1',
+                name: 'developers',
+                display_name: 'Developers',
+                description: 'Development team',
+                source: 'ldap',
+                remote_id: 'dev-group',
+                create_at: 1234567890,
+                update_at: 1234567890,
+                delete_at: 0,
+                has_syncables: false,
+                member_count: 5,
+                scheme_admin: false,
+                allow_reference: true,
+            },
+        ];
+        const channelWithPolicy = {
+            ...channel,
+            policy_enforced: false,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+            groups: mockGroups,
+            profilesNotInCurrentChannel: [users[0]],
+        };
+        await act(async () => {
+            renderWithContext(<ChannelInviteModal {...props}/>);
+        });
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, '@');
+        expect(getUserSpan('user-1')).toBeInTheDocument();
+        expect(getUserSpan('Developers')).toBeInTheDocument();
+    });
+    test('should filter out groups when ABAC is enforced', async () => {
+        const {Client4} = require('mattermost-redux/client');
+        Client4.getProfilesNotInChannel.mockResolvedValue([users[0]]);
+        const mockGroups = [
+            {
+                id: 'group1',
+                name: 'developers',
+                display_name: 'Developers',
+                description: 'Development team',
+                source: 'ldap',
+                remote_id: 'dev-group',
+                create_at: 1234567890,
+                update_at: 1234567890,
+                delete_at: 0,
+                has_syncables: false,
+                member_count: 5,
+                scheme_admin: false,
+                allow_reference: true,
+            },
+        ];
+        const channelWithPolicy = {
+            ...channel,
+            policy_enforced: true,
+        };
+        const props = {
+            ...baseProps,
+            channel: channelWithPolicy,
+            groups: mockGroups,
+            profilesNotInCurrentChannel: [users[0]],
+        };
+        await act(async () => {
+            renderWithContext(<ChannelInviteModal {...props}/>);
+        });
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'user');
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        expect(getUserSpan('user-1')).toBeInTheDocument();
+        expect(screen.queryByText('Developers')).toBeNull();
+    });
+    test('should force fresh API call when ABAC is enforced', async () => {
+        const {Client4} = require('mattermost-redux/client');
+        Client4.getProfilesNotInChannel.mockResolvedValue([]);
+        const props = {
+            ...baseProps,
+            channel: {...channel, policy_enforced: true},
+        };
+        await act(async () => {
+            renderWithContext(<ChannelInviteModal {...props}/>);
+        });
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        expect(Client4.getProfilesNotInChannel).toHaveBeenCalledWith(
+            props.channel.team_id,
+            props.channel.id,
+            props.channel.group_constrained,
+            0,
+            50,
+            '',
+        );
+    });
+    test('should ignore contaminated Redux data when ABAC is enforced', async () => {
+        const {Client4} = require('mattermost-redux/client');
+        Client4.getProfilesNotInChannel.mockResolvedValue([users[0]]);
+        const props = {
+            ...baseProps,
+            channel: {...channel, policy_enforced: true},
+            profilesNotInCurrentChannel: [users[0]],
+            profilesFromRecentDMs: [users[1]],
+            includeUsers: {[users[1].id]: users[1]},
+        };
+        await act(async () => {
+            renderWithContext(<ChannelInviteModal {...props}/>);
+        });
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        const input = screen.getByRole('combobox', {name: /search for people/i});
+        await userEvent.type(input, 'user');
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        expect(getUserSpan('user-1')).toBeInTheDocument();
+        expect(screen.queryByText('user-2')).toBeNull();
+    });
+});

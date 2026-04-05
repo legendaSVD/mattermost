@@ -1,0 +1,23 @@
+.DataSpillageReport {
+    max-width: 700px;
+    border-radius: 4px;
+    background: var(--center-channel-bg, #FFF);
+    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
+    #rhsContainer & {
+        box-shadow: none;
+    }
+    &.mode_short {
+        padding: 16px 19px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+        border-left: 3px solid var(--error-text, #5D89EA);
+    }
+}
+#rhsContainer  .post__body:has(.DataSpillageReport) {
+    position: relative;
+    left: -44px;
+    width: calc(100% + 44px) !important;
+    margin-top: 25px;
+}
+#rhsContainer .post:not(.post--editing):not(.post--editing):has(.DataSpillageReport):hover {
+    background-color: unset;
+}

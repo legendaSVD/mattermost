@@ -1,0 +1,297 @@
+package mocks
+import (
+	model "github.com/mattermost/mattermost/server/public/model"
+	request "github.com/mattermost/mattermost/server/public/shared/request"
+	mock "github.com/stretchr/testify/mock"
+)
+type LdapInterface struct {
+	mock.Mock
+}
+func (_m *LdapInterface) CheckProviderAttributes(rctx request.CTX, LS *model.LdapSettings, ouser *model.User, patch *model.UserPatch) string {
+	ret := _m.Called(rctx, LS, ouser, patch)
+	if len(ret) == 0 {
+		panic("no return value specified for CheckProviderAttributes")
+	}
+	var r0 string
+	if rf, ok := ret.Get(0).(func(request.CTX, *model.LdapSettings, *model.User, *model.UserPatch) string); ok {
+		r0 = rf(rctx, LS, ouser, patch)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	return r0
+}
+func (_m *LdapInterface) DoLogin(rctx request.CTX, id string, password string) (*model.User, *model.AppError) {
+	ret := _m.Called(rctx, id, password)
+	if len(ret) == 0 {
+		panic("no return value specified for DoLogin")
+	}
+	var r0 *model.User
+	var r1 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, string, string) (*model.User, *model.AppError)); ok {
+		return rf(rctx, id, password)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX, string, string) *model.User); ok {
+		r0 = rf(rctx, id, password)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.User)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX, string, string) *model.AppError); ok {
+		r1 = rf(rctx, id, password)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.AppError)
+		}
+	}
+	return r0, r1
+}
+func (_m *LdapInterface) FirstLoginSync(rctx request.CTX, user *model.User) *model.AppError {
+	ret := _m.Called(rctx, user)
+	if len(ret) == 0 {
+		panic("no return value specified for FirstLoginSync")
+	}
+	var r0 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, *model.User) *model.AppError); ok {
+		r0 = rf(rctx, user)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AppError)
+		}
+	}
+	return r0
+}
+func (_m *LdapInterface) GetAllGroupsPage(rctx request.CTX, page int, perPage int, opts model.LdapGroupSearchOpts) ([]*model.Group, int, *model.AppError) {
+	ret := _m.Called(rctx, page, perPage, opts)
+	if len(ret) == 0 {
+		panic("no return value specified for GetAllGroupsPage")
+	}
+	var r0 []*model.Group
+	var r1 int
+	var r2 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, int, int, model.LdapGroupSearchOpts) ([]*model.Group, int, *model.AppError)); ok {
+		return rf(rctx, page, perPage, opts)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX, int, int, model.LdapGroupSearchOpts) []*model.Group); ok {
+		r0 = rf(rctx, page, perPage, opts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Group)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX, int, int, model.LdapGroupSearchOpts) int); ok {
+		r1 = rf(rctx, page, perPage, opts)
+	} else {
+		r1 = ret.Get(1).(int)
+	}
+	if rf, ok := ret.Get(2).(func(request.CTX, int, int, model.LdapGroupSearchOpts) *model.AppError); ok {
+		r2 = rf(rctx, page, perPage, opts)
+	} else {
+		if ret.Get(2) != nil {
+			r2 = ret.Get(2).(*model.AppError)
+		}
+	}
+	return r0, r1, r2
+}
+func (_m *LdapInterface) GetAllLdapUsers(rctx request.CTX) ([]*model.User, *model.AppError) {
+	ret := _m.Called(rctx)
+	if len(ret) == 0 {
+		panic("no return value specified for GetAllLdapUsers")
+	}
+	var r0 []*model.User
+	var r1 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX) ([]*model.User, *model.AppError)); ok {
+		return rf(rctx)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX) []*model.User); ok {
+		r0 = rf(rctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.User)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX) *model.AppError); ok {
+		r1 = rf(rctx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.AppError)
+		}
+	}
+	return r0, r1
+}
+func (_m *LdapInterface) GetGroup(rctx request.CTX, groupUID string) (*model.Group, *model.AppError) {
+	ret := _m.Called(rctx, groupUID)
+	if len(ret) == 0 {
+		panic("no return value specified for GetGroup")
+	}
+	var r0 *model.Group
+	var r1 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, string) (*model.Group, *model.AppError)); ok {
+		return rf(rctx, groupUID)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX, string) *model.Group); ok {
+		r0 = rf(rctx, groupUID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Group)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX, string) *model.AppError); ok {
+		r1 = rf(rctx, groupUID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.AppError)
+		}
+	}
+	return r0, r1
+}
+func (_m *LdapInterface) GetLDAPUserForMMUser(rctx request.CTX, mmUser *model.User) (*model.User, string, *model.AppError) {
+	ret := _m.Called(rctx, mmUser)
+	if len(ret) == 0 {
+		panic("no return value specified for GetLDAPUserForMMUser")
+	}
+	var r0 *model.User
+	var r1 string
+	var r2 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, *model.User) (*model.User, string, *model.AppError)); ok {
+		return rf(rctx, mmUser)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX, *model.User) *model.User); ok {
+		r0 = rf(rctx, mmUser)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.User)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX, *model.User) string); ok {
+		r1 = rf(rctx, mmUser)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+	if rf, ok := ret.Get(2).(func(request.CTX, *model.User) *model.AppError); ok {
+		r2 = rf(rctx, mmUser)
+	} else {
+		if ret.Get(2) != nil {
+			r2 = ret.Get(2).(*model.AppError)
+		}
+	}
+	return r0, r1, r2
+}
+func (_m *LdapInterface) GetUser(rctx request.CTX, id string) (*model.User, *model.AppError) {
+	ret := _m.Called(rctx, id)
+	if len(ret) == 0 {
+		panic("no return value specified for GetUser")
+	}
+	var r0 *model.User
+	var r1 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, string) (*model.User, *model.AppError)); ok {
+		return rf(rctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX, string) *model.User); ok {
+		r0 = rf(rctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.User)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX, string) *model.AppError); ok {
+		r1 = rf(rctx, id)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.AppError)
+		}
+	}
+	return r0, r1
+}
+func (_m *LdapInterface) GetUserAttributes(rctx request.CTX, id string, attributes []string) (map[string]string, *model.AppError) {
+	ret := _m.Called(rctx, id, attributes)
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserAttributes")
+	}
+	var r0 map[string]string
+	var r1 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, string, []string) (map[string]string, *model.AppError)); ok {
+		return rf(rctx, id, attributes)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX, string, []string) map[string]string); ok {
+		r0 = rf(rctx, id, attributes)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]string)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX, string, []string) *model.AppError); ok {
+		r1 = rf(rctx, id, attributes)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.AppError)
+		}
+	}
+	return r0, r1
+}
+func (_m *LdapInterface) MigrateIDAttribute(rctx request.CTX, toAttribute string) error {
+	ret := _m.Called(rctx, toAttribute)
+	if len(ret) == 0 {
+		panic("no return value specified for MigrateIDAttribute")
+	}
+	var r0 error
+	if rf, ok := ret.Get(0).(func(request.CTX, string) error); ok {
+		r0 = rf(rctx, toAttribute)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+func (_m *LdapInterface) StartSynchronizeJob(rctx request.CTX, waitForJobToFinish bool) (*model.Job, *model.AppError) {
+	ret := _m.Called(rctx, waitForJobToFinish)
+	if len(ret) == 0 {
+		panic("no return value specified for StartSynchronizeJob")
+	}
+	var r0 *model.Job
+	var r1 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, bool) (*model.Job, *model.AppError)); ok {
+		return rf(rctx, waitForJobToFinish)
+	}
+	if rf, ok := ret.Get(0).(func(request.CTX, bool) *model.Job); ok {
+		r0 = rf(rctx, waitForJobToFinish)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Job)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(request.CTX, bool) *model.AppError); ok {
+		r1 = rf(rctx, waitForJobToFinish)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.AppError)
+		}
+	}
+	return r0, r1
+}
+func (_m *LdapInterface) SwitchToLdap(rctx request.CTX, userID string, ldapID string, ldapPassword string) *model.AppError {
+	ret := _m.Called(rctx, userID, ldapID, ldapPassword)
+	if len(ret) == 0 {
+		panic("no return value specified for SwitchToLdap")
+	}
+	var r0 *model.AppError
+	if rf, ok := ret.Get(0).(func(request.CTX, string, string, string) *model.AppError); ok {
+		r0 = rf(rctx, userID, ldapID, ldapPassword)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AppError)
+		}
+	}
+	return r0
+}
+func (_m *LdapInterface) UpdateProfilePictureIfNecessary(_a0 request.CTX, _a1 model.User, _a2 model.Session) {
+	_m.Called(_a0, _a1, _a2)
+}
+func NewLdapInterface(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *LdapInterface {
+	mock := &LdapInterface{}
+	mock.Mock.Test(t)
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+	return mock
+}

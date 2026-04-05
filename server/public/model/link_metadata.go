@@ -1,0 +1,172 @@
+package model
+import (
+	"encoding/binary"
+	"encoding/json"
+	"fmt"
+	"hash/fnv"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+	"unicode/utf8"
+	"github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/dyatlov/go-opengraph/opengraph/types/image"
+)
+const (
+	LinkMetadataTypeImage     LinkMetadataType = "image"
+	LinkMetadataTypeNone      LinkMetadataType = "none"
+	LinkMetadataTypeOpengraph LinkMetadataType = "opengraph"
+	LinkMetadataMaxImages     int              = 5
+	LinkMetadataMaxURLLength  int              = 2048
+)
+type LinkMetadataType string
+type LinkMetadata struct {
+	Hash int64
+	URL       string
+	Timestamp int64
+	Type      LinkMetadataType
+	Data any
+}
+func truncateText(original string) string {
+	if utf8.RuneCountInString(original) > 300 {
+		return fmt.Sprintf("%.300s[...]", original)
+	}
+	return original
+}
+func firstNImages(images []*image.Image, maxImages int) []*image.Image {
+	if maxImages < 0 {
+		maxImages = LinkMetadataMaxImages
+	}
+	numImages := len(images)
+	if numImages > maxImages {
+		return images[0:maxImages]
+	}
+	return images
+}
+func TruncateOpenGraph(ogdata *opengraph.OpenGraph) *opengraph.OpenGraph {
+	if ogdata != nil {
+		empty := &opengraph.OpenGraph{}
+		ogdata.Title = truncateText(ogdata.Title)
+		ogdata.Description = truncateText(ogdata.Description)
+		ogdata.SiteName = truncateText(ogdata.SiteName)
+		ogdata.Article = empty.Article
+		ogdata.Book = empty.Book
+		ogdata.Profile = empty.Profile
+		ogdata.Determiner = empty.Determiner
+		ogdata.Locale = empty.Locale
+		ogdata.LocalesAlternate = empty.LocalesAlternate
+		ogdata.Images = FilterSVGImages(firstNImages(ogdata.Images, LinkMetadataMaxImages))
+		ogdata.Audios = empty.Audios
+		ogdata.Videos = empty.Videos
+	}
+	return ogdata
+}
+func FilterSVGImages(images []*image.Image) []*image.Image {
+	if len(images) == 0 {
+		return images
+	}
+	filtered := make([]*image.Image, 0, len(images))
+	for _, img := range images {
+		if img == nil {
+			continue
+		}
+		if IsSVGImageURL(img.URL) || IsSVGImageURL(img.SecureURL) {
+			continue
+		}
+		if strings.HasPrefix(img.Type, "image/svg+xml") {
+			continue
+		}
+		filtered = append(filtered, img)
+	}
+	return filtered
+}
+func IsSVGImageURL(imageURL string) bool {
+	if imageURL == "" {
+		return false
+	}
+	parsed, err := url.Parse(imageURL)
+	if err != nil {
+		return false
+	}
+	path := strings.ToLower(parsed.Path)
+	return strings.HasSuffix(path, ".svg") || strings.HasSuffix(path, ".svgz")
+}
+func (o *LinkMetadata) PreSave() {
+	o.Hash = GenerateLinkMetadataHash(o.URL, o.Timestamp)
+}
+func (o *LinkMetadata) IsValid() *AppError {
+	if o.URL == "" {
+		return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.url.app_error", nil, "", http.StatusBadRequest)
+	}
+	if len(o.URL) > LinkMetadataMaxURLLength {
+		return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.url_length.app_error", map[string]any{"MaxLength": LinkMetadataMaxURLLength, "Length": len(o.URL)}, "", http.StatusBadRequest)
+	}
+	if o.Timestamp == 0 || !isRoundedToNearestHour(o.Timestamp) {
+		return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.timestamp.app_error", nil, "", http.StatusBadRequest)
+	}
+	switch o.Type {
+	case LinkMetadataTypeImage:
+		if o.Data == nil {
+			return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.data.app_error", nil, "", http.StatusBadRequest)
+		}
+		if _, ok := o.Data.(*PostImage); !ok {
+			return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.data_type.app_error", nil, "", http.StatusBadRequest)
+		}
+	case LinkMetadataTypeNone:
+		if o.Data != nil {
+			return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.data_type.app_error", nil, "", http.StatusBadRequest)
+		}
+	case LinkMetadataTypeOpengraph:
+		if o.Data == nil {
+			return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.data.app_error", nil, "", http.StatusBadRequest)
+		}
+		if _, ok := o.Data.(*opengraph.OpenGraph); !ok {
+			return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.data_type.app_error", nil, "", http.StatusBadRequest)
+		}
+	default:
+		return NewAppError("LinkMetadata.IsValid", "model.link_metadata.is_valid.type.app_error", nil, "", http.StatusBadRequest)
+	}
+	return nil
+}
+func (o *LinkMetadata) DeserializeDataToConcreteType() error {
+	var b []byte
+	switch t := o.Data.(type) {
+	case []byte:
+		b = t
+	case string:
+		b = []byte(t)
+	}
+	if b == nil {
+		return nil
+	}
+	var data any
+	var err error
+	switch o.Type {
+	case LinkMetadataTypeImage:
+		image := &PostImage{}
+		err = json.Unmarshal(b, &image)
+		data = image
+	case LinkMetadataTypeOpengraph:
+		og := &opengraph.OpenGraph{}
+		json.Unmarshal(b, &og)
+		data = og
+	}
+	if err != nil {
+		return err
+	}
+	o.Data = data
+	return nil
+}
+func FloorToNearestHour(ms int64) int64 {
+	t := time.Unix(0, ms*int64(1000*1000)).UTC()
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.UTC).UnixNano() / int64(time.Millisecond)
+}
+func isRoundedToNearestHour(ms int64) bool {
+	return FloorToNearestHour(ms) == ms
+}
+func GenerateLinkMetadataHash(url string, timestamp int64) int64 {
+	hash := fnv.New32()
+	binary.Write(hash, binary.LittleEndian, timestamp)
+	hash.Write([]byte(url))
+	return int64(hash.Sum32())
+}

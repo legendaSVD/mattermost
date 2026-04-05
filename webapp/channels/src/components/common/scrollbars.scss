@@ -1,0 +1,14 @@
+.simplebar-track {
+    pointer-events: all;
+}
+.simplebar-track .simplebar-scrollbar::before {
+    width: 6px;
+    border-radius: 2px;
+    background-color: rgba(var(--scrollbar-color, var(--sidebar-text-rgb)), 0.32);
+}
+.simplebar-track .simplebar-scrollbar.simplebar-visible::before {
+    opacity: 1;
+}
+[data-simplebar] {
+    min-height: 0;
+}

@@ -1,0 +1,93 @@
+package mocks
+import (
+	einterfaces "github.com/mattermost/mattermost/server/v8/einterfaces"
+	cache "github.com/mattermost/mattermost/server/v8/platform/services/cache"
+	mock "github.com/stretchr/testify/mock"
+)
+type Provider struct {
+	mock.Mock
+}
+func (_m *Provider) Close() error {
+	ret := _m.Called()
+	if len(ret) == 0 {
+		panic("no return value specified for Close")
+	}
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+func (_m *Provider) Connect() (string, error) {
+	ret := _m.Called()
+	if len(ret) == 0 {
+		panic("no return value specified for Connect")
+	}
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *Provider) NewCache(opts *cache.CacheOptions) (cache.Cache, error) {
+	ret := _m.Called(opts)
+	if len(ret) == 0 {
+		panic("no return value specified for NewCache")
+	}
+	var r0 cache.Cache
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*cache.CacheOptions) (cache.Cache, error)); ok {
+		return rf(opts)
+	}
+	if rf, ok := ret.Get(0).(func(*cache.CacheOptions) cache.Cache); ok {
+		r0 = rf(opts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(cache.Cache)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(*cache.CacheOptions) error); ok {
+		r1 = rf(opts)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *Provider) SetMetrics(metrics einterfaces.MetricsInterface) {
+	_m.Called(metrics)
+}
+func (_m *Provider) Type() string {
+	ret := _m.Called()
+	if len(ret) == 0 {
+		panic("no return value specified for Type")
+	}
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	return r0
+}
+func NewProvider(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *Provider {
+	mock := &Provider{}
+	mock.Mock.Test(t)
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+	return mock
+}

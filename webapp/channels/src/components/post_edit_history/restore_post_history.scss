@@ -1,0 +1,10 @@
+@media (min-width: 758px) {
+    #restorePostModal {
+        .modal-dialog, .modal-content {
+            width: 832px;
+        }
+        .modal-content {
+            max-width: 100%;
+        }
+    }
+}

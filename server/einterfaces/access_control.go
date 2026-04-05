@@ -1,0 +1,5 @@
+package einterfaces
+type AccessControlServiceInterface interface {
+	PolicyAdministrationPointInterface
+	PolicyDecisionPointInterface
+}

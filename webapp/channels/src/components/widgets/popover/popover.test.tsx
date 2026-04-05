@@ -1,0 +1,13 @@
+import {render} from '@testing-library/react';
+import React from 'react';
+import Popover from '.';
+describe('components/widgets/popover', () => {
+    test('plain', () => {
+        const {container} = render(
+            <Popover id='test'>
+                {'Some text'}
+            </Popover>,
+        );
+        expect(container.firstChild).toMatchSnapshot();
+    });
+});

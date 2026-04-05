@@ -1,0 +1,24 @@
+package oembed
+import (
+	"regexp"
+)
+var providers []*ProviderEndpoint
+func init() {
+	providers = []*ProviderEndpoint{
+		{
+			URL: "https://www.youtube.com/oembed",
+			Patterns: []*regexp.Regexp{
+				regexp.MustCompile(`^https://[^/]*?\.youtube\.com/watch.*?$`),
+				regexp.MustCompile(`^https://[^/]*?\.youtube\.com/v/.*?$`),
+				regexp.MustCompile(`^https://youtu\.be/.*?$`),
+				regexp.MustCompile(`^https://[^/]*?\.youtube\.com/playlist\?list=.*?$`),
+				regexp.MustCompile(`^https://youtube\.com/playlist\?list=.*?$`),
+				regexp.MustCompile(`^https://[^/]*?\.youtube\.com/shorts.*?$`),
+				regexp.MustCompile(`^https://youtube\.com/shorts.*?$`),
+				regexp.MustCompile(`^https://[^/]*?\.youtube\.com/embed/.*?$`),
+				regexp.MustCompile(`^https://[^/]*?\.youtube\.com/live.*?$`),
+				regexp.MustCompile(`^https://youtube\.com/live.*?$`),
+			},
+		},
+	}
+}

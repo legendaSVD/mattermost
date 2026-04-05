@@ -1,0 +1,1 @@
+ALTER TABLE oauthapps DROP COLUMN IF EXISTS isdynamicallyregistered;

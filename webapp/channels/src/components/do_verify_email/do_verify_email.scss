@@ -1,0 +1,22 @@
+@use 'utils/mixins';
+.do-verify-body {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    .do-verify-body-content {
+        display: flex;
+        height: fit-content;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        .do-verify-body-content-button-container {
+            display: flex;
+            flex: 1;
+            justify-content: center;
+            .do-verify-body-content-button-return {
+                @include mixins.primary-button;
+                @include mixins.button-medium;
+            }
+        }
+    }
+}

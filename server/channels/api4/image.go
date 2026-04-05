@@ -1,0 +1,40 @@
+package api4
+import (
+	"net/http"
+	"net/url"
+	"github.com/mattermost/mattermost/server/public/model"
+)
+func (api *API) InitImage() {
+	api.BaseRoutes.Image.Handle("", api.APISessionRequiredTrustRequester(getImage)).Methods(http.MethodGet)
+}
+func getImage(c *Context, w http.ResponseWriter, r *http.Request) {
+	actualURL := r.URL.Query().Get("url")
+	parsedURL, err := url.Parse(actualURL)
+	if err != nil {
+		c.Err = model.NewAppError("getImage", "api.image.get.app_error", nil, "", http.StatusBadRequest).Wrap(err)
+		return
+	} else if parsedURL.Opaque != "" {
+		c.Err = model.NewAppError("getImage", "api.image.get.app_error", nil, "", http.StatusBadRequest)
+		return
+	}
+	siteURL, err := url.Parse(*c.App.Config().ServiceSettings.SiteURL)
+	if err != nil {
+		c.Err = model.NewAppError("getImage", "model.config.is_valid.site_url.app_error", nil, "", http.StatusInternalServerError).Wrap(err)
+		return
+	}
+	if parsedURL.Scheme == "" {
+		parsedURL.Scheme = siteURL.Scheme
+	}
+	if parsedURL.Host == "" {
+		parsedURL.Host = siteURL.Host
+	}
+	if *c.App.Config().ImageProxySettings.Enable {
+		if parsedURL.Host != siteURL.Host {
+			c.App.ImageProxy().GetImage(w, r, parsedURL.String())
+		} else {
+			http.Redirect(w, r, parsedURL.String(), http.StatusFound)
+		}
+		return
+	}
+	c.Err = model.NewAppError("getImage", "api.image.get.app_error", nil, "", http.StatusBadRequest)
+}

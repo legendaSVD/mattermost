@@ -1,0 +1,81 @@
+import type {UserProfile} from '@mattermost/types/users';
+import {addUserIdsForStatusFetchingPoll} from 'mattermost-redux/actions/status_profile_polling';
+import {getStatusesByIds} from 'mattermost-redux/actions/users';
+import {getCurrentChannelId} from 'mattermost-redux/selectors/entities/channels';
+import {getIsUserStatusesConfigEnabled} from 'mattermost-redux/selectors/entities/common';
+import {getPostsInCurrentChannel} from 'mattermost-redux/selectors/entities/posts';
+import {getDirectShowPreferences} from 'mattermost-redux/selectors/entities/preferences';
+import {getCurrentUserId} from 'mattermost-redux/selectors/entities/users';
+import {loadCustomEmojisForCustomStatusesByUserIds} from 'actions/emoji_actions';
+import type {ActionFunc} from 'types/store';
+export function addVisibleUsersInCurrentChannelAndSelfToStatusPoll(): ActionFunc<boolean> {
+    return (dispatch, getState) => {
+        const state = getState();
+        const currentUserId = getCurrentUserId(state);
+        const currentChannelId = getCurrentChannelId(state);
+        const postsInChannel = getPostsInCurrentChannel(state);
+        const numberOfPostsVisibleInCurrentChannel = state.views.channel.postVisibility[currentChannelId] || 0;
+        const userIdsToFetchStatusFor = new Set<string>();
+        if (postsInChannel && numberOfPostsVisibleInCurrentChannel > 0) {
+            const posts = postsInChannel.slice(0, numberOfPostsVisibleInCurrentChannel);
+            for (const post of posts) {
+                if (post.user_id && post.user_id !== currentUserId) {
+                    userIdsToFetchStatusFor.add(post.user_id);
+                }
+            }
+        }
+        const directShowPreferences = getDirectShowPreferences(state);
+        for (const directShowPreference of directShowPreferences) {
+            if (directShowPreference.value === 'true') {
+                userIdsToFetchStatusFor.add(directShowPreference.name);
+            }
+        }
+        userIdsToFetchStatusFor.add(currentUserId);
+        const userIdsForStatus = Array.from(userIdsToFetchStatusFor);
+        if (userIdsForStatus.length > 0) {
+            dispatch(addUserIdsForStatusFetchingPoll(userIdsForStatus));
+        }
+        return {data: true};
+    };
+}
+export function loadStatusesForProfilesList(users: UserProfile[] | null): ActionFunc<boolean> {
+    return (dispatch) => {
+        if (users == null) {
+            return {data: false};
+        }
+        const statusesToLoad = [];
+        for (let i = 0; i < users.length; i++) {
+            statusesToLoad.push(users[i].id);
+        }
+        dispatch(loadStatusesByIds(statusesToLoad));
+        return {data: true};
+    };
+}
+export function loadStatusesByIds(userIds: string[]): ActionFunc {
+    return (dispatch, getState) => {
+        const state = getState();
+        const enabledUserStatuses = getIsUserStatusesConfigEnabled(state);
+        if (userIds.length === 0 || !enabledUserStatuses) {
+            return {data: false};
+        }
+        dispatch(getStatusesByIds(userIds));
+        dispatch(loadCustomEmojisForCustomStatusesByUserIds(userIds));
+        return {data: true};
+    };
+}
+export function loadProfilesMissingStatus(users: UserProfile[]): ActionFunc {
+    return (dispatch, getState) => {
+        const state = getState();
+        const enabledUserStatuses = getIsUserStatusesConfigEnabled(state);
+        const statuses = state.entities.users.statuses;
+        const missingStatusByIds = users.
+            filter((user) => !statuses[user.id]).
+            map((user) => user.id);
+        if (missingStatusByIds.length === 0 || !enabledUserStatuses) {
+            return {data: false};
+        }
+        dispatch(getStatusesByIds(missingStatusByIds));
+        dispatch(loadCustomEmojisForCustomStatusesByUserIds(missingStatusByIds));
+        return {data: true};
+    };
+}

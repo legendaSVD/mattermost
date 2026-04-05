@@ -1,0 +1,22 @@
+import classNames from 'classnames';
+import React from 'react';
+import type {ReactNode} from 'react';
+type Props = {
+    withBackButton?: boolean;
+    children: ReactNode;
+};
+const AdminHeader = (props: Props) => {
+    return (
+        <div
+            className={
+                classNames(
+                    'admin-console__header',
+                    {'with-back': props.withBackButton},
+                )
+            }
+        >
+            {props.children}
+        </div>
+    );
+};
+export default AdminHeader;

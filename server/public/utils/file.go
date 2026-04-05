@@ -1,0 +1,98 @@
+package utils
+import (
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+)
+func CopyFile(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	if err = os.MkdirAll(filepath.Dir(dst), os.ModePerm); err != nil {
+		return
+	}
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if e := out.Close(); e != nil {
+			err = e
+		}
+	}()
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return
+	}
+	err = out.Sync()
+	if err != nil {
+		return
+	}
+	stat, err := os.Stat(src)
+	if err != nil {
+		return
+	}
+	err = os.Chmod(dst, stat.Mode())
+	if err != nil {
+		return
+	}
+	return
+}
+func CopyDir(src string, dst string) (err error) {
+	src, err = filepath.Abs(src)
+	if err != nil {
+		return
+	}
+	dst, err = filepath.Abs(dst)
+	if err != nil {
+		return
+	}
+	stat, err := os.Stat(src)
+	if err != nil {
+		return
+	}
+	if !stat.IsDir() {
+		return fmt.Errorf("source must be a directory")
+	}
+	_, err = os.Stat(dst)
+	if err != nil && !os.IsNotExist(err) {
+		return
+	}
+	if err == nil {
+		return fmt.Errorf("destination already exists")
+	}
+	err = os.MkdirAll(dst, stat.Mode())
+	if err != nil {
+		return
+	}
+	items, err := os.ReadDir(src)
+	if err != nil {
+		return
+	}
+	for _, item := range items {
+		srcPath := filepath.Join(src, item.Name())
+		dstPath := filepath.Join(dst, item.Name())
+		if item.IsDir() {
+			err = CopyDir(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		} else {
+			info, ierr := item.Info()
+			if ierr != nil {
+				continue
+			}
+			if info.Mode()&os.ModeSymlink != 0 {
+				continue
+			}
+			err = CopyFile(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}

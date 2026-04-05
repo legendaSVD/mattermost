@@ -1,0 +1,30 @@
+import React from 'react';
+import TrialBenefitsModalStep from 'components/trial_benefits_modal/trial_benefits_modal_step';
+import {renderWithContext} from 'tests/react_testing_utils';
+describe('components/trial_benefits_modal/trial_benefits_modal_step', () => {
+    const props = {
+        id: 'stepId',
+        title: 'Step title',
+        description: 'Step description',
+        svgWrapperClassName: 'stepClassname',
+        svgElement: <svg/>,
+        buttonLabel: 'button',
+    };
+    test('should match snapshot', () => {
+        const {baseElement} = renderWithContext(
+            <TrialBenefitsModalStep {...props}/>,
+        );
+        expect(baseElement).toMatchSnapshot();
+    });
+    test('should match snapshot with optional params', () => {
+        const {baseElement} = renderWithContext(
+            <TrialBenefitsModalStep
+                {...props}
+                bottomLeftMessage='Step bottom message'
+                pageURL='/test/page'
+                onClose={jest.fn()}
+            />,
+        );
+        expect(baseElement).toMatchSnapshot();
+    });
+});

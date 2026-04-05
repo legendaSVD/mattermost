@@ -1,0 +1,30 @@
+import React from 'react';
+import type {SubmitPostReturnType} from 'actions/views/create_comment';
+import AdvancedTextEditor from 'components/advanced_text_editor/advanced_text_editor';
+import {Locations} from 'utils/constants';
+export type Props = {
+    channelId: string;
+    rootId: string;
+    isThreadView?: boolean;
+    placeholder?: string;
+    afterSubmit?: (response: SubmitPostReturnType) => void;
+}
+const AdvancedCreateComment = ({
+    channelId,
+    rootId,
+    isThreadView,
+    placeholder,
+    afterSubmit,
+}: Props) => {
+    return (
+        <AdvancedTextEditor
+            location={Locations.RHS_COMMENT}
+            channelId={channelId}
+            rootId={rootId}
+            isThreadView={isThreadView}
+            placeholder={placeholder}
+            afterSubmit={afterSubmit}
+        />
+    );
+};
+export default React.memo(AdvancedCreateComment);

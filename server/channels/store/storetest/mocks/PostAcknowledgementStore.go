@@ -1,0 +1,224 @@
+package mocks
+import (
+	model "github.com/mattermost/mattermost/server/public/model"
+	mock "github.com/stretchr/testify/mock"
+)
+type PostAcknowledgementStore struct {
+	mock.Mock
+}
+func (_m *PostAcknowledgementStore) BatchDelete(acknowledgements []*model.PostAcknowledgement) error {
+	ret := _m.Called(acknowledgements)
+	if len(ret) == 0 {
+		panic("no return value specified for BatchDelete")
+	}
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]*model.PostAcknowledgement) error); ok {
+		r0 = rf(acknowledgements)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+func (_m *PostAcknowledgementStore) BatchSave(acknowledgements []*model.PostAcknowledgement) ([]*model.PostAcknowledgement, error) {
+	ret := _m.Called(acknowledgements)
+	if len(ret) == 0 {
+		panic("no return value specified for BatchSave")
+	}
+	var r0 []*model.PostAcknowledgement
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]*model.PostAcknowledgement) ([]*model.PostAcknowledgement, error)); ok {
+		return rf(acknowledgements)
+	}
+	if rf, ok := ret.Get(0).(func([]*model.PostAcknowledgement) []*model.PostAcknowledgement); ok {
+		r0 = rf(acknowledgements)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.PostAcknowledgement)
+		}
+	}
+	if rf, ok := ret.Get(1).(func([]*model.PostAcknowledgement) error); ok {
+		r1 = rf(acknowledgements)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *PostAcknowledgementStore) Delete(acknowledgement *model.PostAcknowledgement) error {
+	ret := _m.Called(acknowledgement)
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*model.PostAcknowledgement) error); ok {
+		r0 = rf(acknowledgement)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+func (_m *PostAcknowledgementStore) DeleteAllForPost(postID string) error {
+	ret := _m.Called(postID)
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteAllForPost")
+	}
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(postID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+func (_m *PostAcknowledgementStore) Get(postID string, userID string) (*model.PostAcknowledgement, error) {
+	ret := _m.Called(postID, userID)
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+	var r0 *model.PostAcknowledgement
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string) (*model.PostAcknowledgement, error)); ok {
+		return rf(postID, userID)
+	}
+	if rf, ok := ret.Get(0).(func(string, string) *model.PostAcknowledgement); ok {
+		r0 = rf(postID, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.PostAcknowledgement)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(postID, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *PostAcknowledgementStore) GetForPost(postID string) ([]*model.PostAcknowledgement, error) {
+	ret := _m.Called(postID)
+	if len(ret) == 0 {
+		panic("no return value specified for GetForPost")
+	}
+	var r0 []*model.PostAcknowledgement
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]*model.PostAcknowledgement, error)); ok {
+		return rf(postID)
+	}
+	if rf, ok := ret.Get(0).(func(string) []*model.PostAcknowledgement); ok {
+		r0 = rf(postID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.PostAcknowledgement)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(postID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *PostAcknowledgementStore) GetForPostSince(postID string, since int64, excludeRemoteID string, inclDeleted bool) ([]*model.PostAcknowledgement, error) {
+	ret := _m.Called(postID, since, excludeRemoteID, inclDeleted)
+	if len(ret) == 0 {
+		panic("no return value specified for GetForPostSince")
+	}
+	var r0 []*model.PostAcknowledgement
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, int64, string, bool) ([]*model.PostAcknowledgement, error)); ok {
+		return rf(postID, since, excludeRemoteID, inclDeleted)
+	}
+	if rf, ok := ret.Get(0).(func(string, int64, string, bool) []*model.PostAcknowledgement); ok {
+		r0 = rf(postID, since, excludeRemoteID, inclDeleted)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.PostAcknowledgement)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(string, int64, string, bool) error); ok {
+		r1 = rf(postID, since, excludeRemoteID, inclDeleted)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *PostAcknowledgementStore) GetForPosts(postIds []string) ([]*model.PostAcknowledgement, error) {
+	ret := _m.Called(postIds)
+	if len(ret) == 0 {
+		panic("no return value specified for GetForPosts")
+	}
+	var r0 []*model.PostAcknowledgement
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]string) ([]*model.PostAcknowledgement, error)); ok {
+		return rf(postIds)
+	}
+	if rf, ok := ret.Get(0).(func([]string) []*model.PostAcknowledgement); ok {
+		r0 = rf(postIds)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.PostAcknowledgement)
+		}
+	}
+	if rf, ok := ret.Get(1).(func([]string) error); ok {
+		r1 = rf(postIds)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *PostAcknowledgementStore) GetSingle(userID string, postID string, remoteID string) (*model.PostAcknowledgement, error) {
+	ret := _m.Called(userID, postID, remoteID)
+	if len(ret) == 0 {
+		panic("no return value specified for GetSingle")
+	}
+	var r0 *model.PostAcknowledgement
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string, string) (*model.PostAcknowledgement, error)); ok {
+		return rf(userID, postID, remoteID)
+	}
+	if rf, ok := ret.Get(0).(func(string, string, string) *model.PostAcknowledgement); ok {
+		r0 = rf(userID, postID, remoteID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.PostAcknowledgement)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(userID, postID, remoteID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func (_m *PostAcknowledgementStore) SaveWithModel(acknowledgement *model.PostAcknowledgement) (*model.PostAcknowledgement, error) {
+	ret := _m.Called(acknowledgement)
+	if len(ret) == 0 {
+		panic("no return value specified for SaveWithModel")
+	}
+	var r0 *model.PostAcknowledgement
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*model.PostAcknowledgement) (*model.PostAcknowledgement, error)); ok {
+		return rf(acknowledgement)
+	}
+	if rf, ok := ret.Get(0).(func(*model.PostAcknowledgement) *model.PostAcknowledgement); ok {
+		r0 = rf(acknowledgement)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.PostAcknowledgement)
+		}
+	}
+	if rf, ok := ret.Get(1).(func(*model.PostAcknowledgement) error); ok {
+		r1 = rf(acknowledgement)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+func NewPostAcknowledgementStore(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *PostAcknowledgementStore {
+	mock := &PostAcknowledgementStore{}
+	mock.Mock.Test(t)
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+	return mock
+}

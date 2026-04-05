@@ -1,0 +1,50 @@
+import React from 'react';
+import {useDispatch} from 'react-redux';
+import * as modalActions from 'actions/views/modals';
+import AddGroupsToChannelModal from 'components/add_groups_to_channel_modal';
+import ChannelGroupsManageModal from 'components/channel_groups_manage_modal';
+import {WithTestMenuContext} from 'components/menu/menu_context_test';
+import {renderWithContext, screen, userEvent} from 'tests/react_testing_utils';
+import {ModalIdentifiers} from 'utils/constants';
+import {TestHelper} from 'utils/test_helper';
+import Groups from './groups';
+describe('components/ChannelHeaderMenu/MenuItems/Groups', () => {
+    beforeEach(() => {
+        jest.spyOn(modalActions, 'openModal');
+        jest.spyOn(require('react-redux'), 'useDispatch');
+    });
+    const channel = TestHelper.getChannelMock();
+    test('renders the component correctly, handle click event for add groups', async () => {
+        renderWithContext(
+            <WithTestMenuContext>
+                <Groups channel={channel}/>
+            </WithTestMenuContext>, {},
+        );
+        const menuItem = screen.getByText('Add Groups');
+        expect(menuItem).toBeInTheDocument();
+        await userEvent.click(menuItem);
+        expect(useDispatch).toHaveBeenCalledTimes(1);
+        expect(modalActions.openModal).toHaveBeenCalledTimes(1);
+        expect(modalActions.openModal).toHaveBeenCalledWith({
+            modalId: ModalIdentifiers.ADD_GROUPS_TO_CHANNEL,
+            dialogType: AddGroupsToChannelModal,
+        });
+    });
+    test('renders the component correctly, handle click event for manage groups', async () => {
+        renderWithContext(
+            <WithTestMenuContext>
+                <Groups channel={channel}/>
+            </WithTestMenuContext>, {},
+        );
+        const menuItemMG = screen.getByText('Manage Groups');
+        expect(menuItemMG).toBeInTheDocument();
+        await userEvent.click(menuItemMG);
+        expect(useDispatch).toHaveBeenCalledTimes(1);
+        expect(modalActions.openModal).toHaveBeenCalledTimes(1);
+        expect(modalActions.openModal).toHaveBeenCalledWith({
+            modalId: ModalIdentifiers.MANAGE_CHANNEL_GROUPS,
+            dialogType: ChannelGroupsManageModal,
+            dialogProps: {channelID: channel.id},
+        });
+    });
+});

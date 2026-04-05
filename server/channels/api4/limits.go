@@ -1,0 +1,33 @@
+package api4
+import (
+	"encoding/json"
+	"net/http"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/shared/mlog"
+)
+func (api *API) InitLimits() {
+	api.BaseRoutes.Limits.Handle("/server", api.APISessionRequired(getServerLimits)).Methods(http.MethodGet)
+}
+func getServerLimits(c *Context, w http.ResponseWriter, r *http.Request) {
+	isAdmin := c.IsSystemAdmin() && c.App.SessionHasPermissionTo(*c.AppContext.Session(), model.PermissionSysconsoleReadUserManagementUsers)
+	serverLimits, err := c.App.GetServerLimits()
+	if err != nil {
+		c.Err = err
+		return
+	}
+	if !isAdmin {
+		limitedData := &model.ServerLimits{
+			MaxUsersLimit:           0,
+			MaxUsersHardLimit:       0,
+			ActiveUserCount:         0,
+			SingleChannelGuestCount: 0,
+			SingleChannelGuestLimit: 0,
+			LastAccessiblePostTime:  serverLimits.LastAccessiblePostTime,
+			PostHistoryLimit:        serverLimits.PostHistoryLimit,
+		}
+		serverLimits = limitedData
+	}
+	if err := json.NewEncoder(w).Encode(serverLimits); err != nil {
+		c.Logger.Warn("Error writing server limits response", mlog.Err(err))
+	}
+}

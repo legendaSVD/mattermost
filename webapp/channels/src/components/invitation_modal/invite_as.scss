@@ -1,0 +1,58 @@
+@use 'components/toggle';
+.InviteAs {
+    &__label {
+        color: var(--center-channel-color);
+        &--parenthetical {
+            color: rgba(var(--center-channel-color-rgb), 0.8);
+        }
+    }
+    .radio {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        &:first-child {
+            margin-top: 0;
+        }
+        &:last-child {
+            margin-bottom: 0;
+        }
+        .disabled-legend {
+            opacity: 0.73;
+        }
+        .Tag {
+            position: absolute;
+            display: inline-flex;
+            margin: 0;
+            &__restricted-indicator-badge {
+                position: relative;
+                display: flex;
+                height: 24px;
+                align-items: center;
+                padding: 0 12px;
+                border: 1px solid rgba(var(--button-bg-rgb), 0.08);
+                border-radius: 20px;
+                background: rgba(var(--button-bg-rgb), 0.04);
+                color: var(--button-bg);
+                .RestrictedIndicator__icon-tooltip-container {
+                    padding: 0;
+                    .tag-text {
+                        padding-left: 5px;
+                        font-size: 11px;
+                        font-weight: 700;
+                    }
+                    .RestrictedIndicator__icon-tooltip {
+                        padding: 0;
+                        font-size: 14px;
+                    }
+                    .RestrictedIndicator__button {
+                        display: flex;
+                        margin-top: 4px;
+                        .tag-text {
+                            padding-left: 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
