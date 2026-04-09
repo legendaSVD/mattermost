@@ -1,0 +1,186 @@
+import type {DeepPartial} from '@mattermost/types/utilities';
+import {Permissions} from 'mattermost-redux/constants';
+import type {GlobalState} from 'types/store';
+import {canAccessChannelSettings} from './channel_settings';
+describe('Selectors.Views.ChannelSettings', () => {
+    const teamId = 'team1';
+    const channelId = 'channel1';
+    const defaultChannelId = 'default_channel';
+    const privateChannelId = 'private_channel1';
+    const dmChannelId = 'dm_channel1';
+    const gmChannelId = 'gm_channel1';
+    function getBaseState(): GlobalState {
+        const state: DeepPartial<GlobalState> = {
+            entities: {
+                channels: {
+                    channels: {
+                        [channelId]: {
+                            id: channelId,
+                            team_id: teamId,
+                            name: 'test-channel',
+                            type: 'O',
+                        },
+                        [defaultChannelId]: {
+                            id: defaultChannelId,
+                            team_id: teamId,
+                            name: 'town-square',
+                            type: 'O',
+                        },
+                        [privateChannelId]: {
+                            id: privateChannelId,
+                            team_id: teamId,
+                            name: 'private-channel',
+                            type: 'P',
+                        },
+                        [dmChannelId]: {
+                            id: dmChannelId,
+                            team_id: teamId,
+                            name: 'user1__user2',
+                            type: 'D',
+                        },
+                        [gmChannelId]: {
+                            id: gmChannelId,
+                            team_id: teamId,
+                            name: 'group-channel',
+                            type: 'G',
+                        },
+                    },
+                },
+                roles: {
+                    roles: {},
+                },
+                general: {
+                    config: {},
+                },
+                users: {
+                    currentUserId: 'current_user_id',
+                    profiles: {
+                        current_user_id: {
+                            id: 'current_user_id',
+                            roles: 'system_user',
+                        },
+                    },
+                },
+                teams: {
+                    currentTeamId: teamId,
+                    teams: {
+                        [teamId]: {
+                            id: teamId,
+                            name: 'test-team',
+                        },
+                    },
+                },
+            },
+        };
+        return state as GlobalState;
+    }
+    beforeEach(() => {
+        jest.spyOn(require('mattermost-redux/selectors/entities/roles'), 'haveIChannelPermission').mockImplementation(() => false);
+    });
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+    const setPermissionCheckResults = (permissionResults: Record<string, boolean>) => {
+        const mockFunction = require('mattermost-redux/selectors/entities/roles').haveIChannelPermission as jest.Mock;
+        mockFunction.mockImplementation(
+            (_state: GlobalState, _teamId: string, _channelId: string, permission: string) => {
+                return permissionResults[permission] || false;
+            },
+        );
+    };
+    it('should return false when channel does not exist', () => {
+        const result = canAccessChannelSettings(getBaseState(), 'nonexistent_channel');
+        expect(result).toBe(false);
+    });
+    it('should return true when user has info tab permission for public channel', () => {
+        setPermissionCheckResults({
+            [Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES]: true,
+            [Permissions.MANAGE_PUBLIC_CHANNEL_BANNER]: false,
+            [Permissions.DELETE_PUBLIC_CHANNEL]: false,
+        });
+        const result = canAccessChannelSettings(getBaseState(), channelId);
+        expect(result).toBe(true);
+    });
+    it('should return true when user has info tab permission for private channel', () => {
+        setPermissionCheckResults({
+            [Permissions.MANAGE_PRIVATE_CHANNEL_PROPERTIES]: true,
+            [Permissions.MANAGE_PRIVATE_CHANNEL_BANNER]: false,
+            [Permissions.DELETE_PRIVATE_CHANNEL]: false,
+        });
+        const result = canAccessChannelSettings(getBaseState(), privateChannelId);
+        expect(result).toBe(true);
+    });
+    it('should return true when user has banner tab permission', () => {
+        setPermissionCheckResults({
+            [Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES]: false,
+            [Permissions.MANAGE_PUBLIC_CHANNEL_BANNER]: true,
+            [Permissions.DELETE_PUBLIC_CHANNEL]: false,
+        });
+        const result = canAccessChannelSettings(getBaseState(), channelId);
+        expect(result).toBe(true);
+    });
+    it('should return true when user has archive tab permission', () => {
+        setPermissionCheckResults({
+            [Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES]: false,
+            [Permissions.MANAGE_PUBLIC_CHANNEL_BANNER]: false,
+            [Permissions.DELETE_PUBLIC_CHANNEL]: true,
+        });
+        const result = canAccessChannelSettings(getBaseState(), channelId);
+        expect(result).toBe(true);
+    });
+    it('should return false when user has no permissions', () => {
+        const mockFunction = require('mattermost-redux/selectors/entities/roles').haveIChannelPermission as jest.Mock;
+        mockFunction.mockImplementation(() => false);
+        const result = false;
+        expect(result).toBe(false);
+    });
+    it('should return false for default channel with only archive permission', () => {
+        setPermissionCheckResults({
+            [Permissions.MANAGE_PUBLIC_CHANNEL_PROPERTIES]: false,
+            [Permissions.MANAGE_PUBLIC_CHANNEL_BANNER]: false,
+            [Permissions.DELETE_PUBLIC_CHANNEL]: true,
+        });
+        const result = canAccessChannelSettings(getBaseState(), defaultChannelId);
+        expect(result).toBe(false);
+    });
+    describe('DM and GM channels with RestrictDMAndGMAutotranslation', () => {
+        it('should return false when autotranslation is not enabled for DM', () => {
+            const state = getBaseState();
+            state.entities.general.config.EnableAutoTranslation = 'false';
+            const result = canAccessChannelSettings(state, dmChannelId);
+            expect(result).toBe(false);
+        });
+        it('should return false when autotranslation is not enabled for GM', () => {
+            const state = getBaseState();
+            state.entities.general.config.EnableAutoTranslation = 'false';
+            const result = canAccessChannelSettings(state, gmChannelId);
+            expect(result).toBe(false);
+        });
+        it('should return true for DM channel when RestrictDMAndGMAutotranslation is not enabled', () => {
+            const state = getBaseState();
+            state.entities.general.config.EnableAutoTranslation = 'true';
+            const result = canAccessChannelSettings(state, dmChannelId);
+            expect(result).toBe(true);
+        });
+        it('should return true for GM channel when RestrictDMAndGMAutotranslation is not enabled', () => {
+            const state = getBaseState();
+            state.entities.general.config.EnableAutoTranslation = 'true';
+            const result = canAccessChannelSettings(state, gmChannelId);
+            expect(result).toBe(true);
+        });
+        it('should return false for DM channel when RestrictDMAndGMAutotranslation is enabled', () => {
+            const state = getBaseState();
+            state.entities.general.config.EnableAutoTranslation = 'true';
+            state.entities.general.config.RestrictDMAndGMAutotranslation = 'true';
+            const result = canAccessChannelSettings(state, dmChannelId);
+            expect(result).toBe(false);
+        });
+        it('should return false for GM channel when RestrictDMAndGMAutotranslation is enabled', () => {
+            const state = getBaseState();
+            state.entities.general.config.EnableAutoTranslation = 'true';
+            state.entities.general.config.RestrictDMAndGMAutotranslation = 'true';
+            const result = canAccessChannelSettings(state, gmChannelId);
+            expect(result).toBe(false);
+        });
+    });
+});

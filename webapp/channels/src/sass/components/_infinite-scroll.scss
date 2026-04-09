@@ -1,0 +1,9 @@
+.infinite-scroll {
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+.infinite-scroll:hover {
+    overflow-y: scroll;
+    overflow-y: overlay;
+}

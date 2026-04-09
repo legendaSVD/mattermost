@@ -1,0 +1,25 @@
+import {GiphyFetch} from '@giphy/js-fetch-api';
+import {createSelector} from 'mattermost-redux/selectors/create_selector';
+import {getConfig} from 'mattermost-redux/selectors/entities/general';
+import {getCurrentLocale} from 'selectors/i18n';
+import type {GlobalState} from 'types/store';
+export const getGiphyFetchInstance: (state: GlobalState) => GiphyFetch | null =
+    createSelector(
+        'getGiphyFetchInstance',
+        (state) => getConfig(state).GiphySdkKey,
+        (giphySdkKey) => {
+            if (giphySdkKey) {
+                const giphyFetch = new GiphyFetch(giphySdkKey);
+                return giphyFetch;
+            }
+            return null;
+        },
+    );
+export const getGiphyLanguageCode: (state: GlobalState) => string =
+    createSelector(
+        'getGiphyLanguageCode',
+        (state) => getCurrentLocale(state),
+        (currentLocale) => {
+            return currentLocale?.split('-')?.[0] ?? 'en';
+        },
+    );
